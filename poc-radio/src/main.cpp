@@ -4,6 +4,17 @@
 #include <QTcpServer>
 #include <QTcpSocket>
 #include <QTimer>
+#include <QDir>
+
+// ---- QML-интерфейс (Этап 3 роадмапа) ----
+// QGuiApplication — "облегчённая" версия приложения: без окон десктопа,
+// именно так устроены приложения в Авроре.
+#include <QGuiApplication>
+// QQmlApplicationEngine — запускает qml/main.qml и показывает окно.
+#include <QQmlApplicationEngine>
+#include <QQmlContext>   // чтобы "передать" C++-объект внутрь QML
+#include <QtQml>         // qmlRegisterUncreatableType — регистрация наших типов в QML
+#include <QUrl>          // адрес файла для загрузки QML
 
 #include "signalingclient.h"
 #include "radiostate.h"
@@ -15,11 +26,16 @@
  *
  * Запуск для проверки без сервера:  ./poc-radio --echo-server 5000
  * Запуск клиента:                   ./poc-radio --server 127.0.0.1 --port 5000
+ * То же самое, но с окошком (QML):  добавь флаг  --gui
  */
 
 int main(int argc, char *argv[])
 {
-    QCoreApplication app(argc, argv);
+    // QCoreApplication — приложение "без окна" (для тестов и фоновой логики),
+    // QGuiApplication — то же самое + умение показывать QML-интерфейс.
+    // В Авроре приложения всегда строятся на QGuiApplication, поэтому
+    // тренируемся сразу на нём: консольный режим просто не создаёт окно.
+    QGuiApplication app(argc, argv);
     QCoreApplication::setApplicationName("poc-radio");
     QCoreApplication::setApplicationVersion("0.1.0");
 
@@ -29,7 +45,14 @@ int main(int argc, char *argv[])
     parser.addOption({{"s", "server"}, "Host of signaling server", "host", ""});
     parser.addOption({{"p", "port"}, "Port of signaling server", "port", "5000"});
     parser.addOption({{"e", "echo-server"}, "Run local echo test server on given port", "port"});
+    // Флаг --gui: показать QML-окошко с кнопкой PTT (проверка Этапа 3 на десктопе).
+    // В Aurora SDK интерфейс из qml/ запускается всегда, этот флаг нужен только
+    // для проверки на обычном компьютере без телефона.
+    QCommandLineOption guiOption(QStringList{"gui"}, "Show QML interface window");
+    parser.addOption(guiOption);
     parser.process(app);
+
+    const bool useGui = parser.isSet(guiOption);
 
     SignalingClient client;
     RadioState radio(&client);
@@ -80,11 +103,32 @@ int main(int argc, char *argv[])
     }
     client.connectToServer(host, quint16(parser.value("port").toUInt()));
 
-    // Простейшая последовательность для ручной проверки:
-    // через секунду заходим в канал, ещё через две — «нажимаем PTT».
-    QTimer::singleShot(1000, [&]() { radio.joinChannel("test-channel", "Ivan"); });
-    QTimer::singleShot(3000, [&]() { radio.requestTalk(); });
-    QTimer::singleShot(6000, [&]() { radio.releaseTalk(); });
+    // ---- QML-интерфейс (Этап 3) ----
+    // "Передать" наш C++-объект radio внутрь QML под именем `radio`.
+    // После этого в main.qml можно писать radio.requestTalk() или text: radio.channelName.
+    QQmlApplicationEngine engine;
+    if (useGui) {
+        engine.rootContext()->setContextProperty("radio", &radio);
+        // Чтобы писать в QML `RadioState.Talking` (наши режимы), регистрируем
+        // класс модели как тип QML. В Aurora SDK это делается так же.
+        qmlRegisterUncreatableType<RadioState>(
+            "org.pocradio", 1, 0, "RadioState",
+            QStringLiteral("RadioState создаётся только на стороне C++"));
+        // Ищем main.qml рядом с программой — при сборке из исходников это папка qml/.
+        const QString qmlFile = QDir::current().filePath("qml/main.qml");
+        engine.load(QUrl::fromLocalFile(qmlFile));
+        if (engine.rootObjects().isEmpty()) {
+            qCritical() << "Не удалось загрузить" << qmlFile
+                        << "(запускай из папки poc-radio/)";
+            return 1;
+        }
+    } else {
+        // Консольный режим без интерфейса: Простейшая последовательность для ручной проверки:
+        // через секунду заходим в канал, ещё через две — «нажимаем PTT».
+        QTimer::singleShot(1000, [&]() { radio.joinChannel("test-channel", "Ivan"); });
+        QTimer::singleShot(3000, [&]() { radio.requestTalk(); });
+        QTimer::singleShot(6000, [&]() { radio.releaseTalk(); });
+    }
 
     return app.exec();
 }
