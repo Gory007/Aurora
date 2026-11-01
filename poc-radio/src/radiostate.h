@@ -34,24 +34,11 @@ public:
     };
     Q_ENUM(Mode) // разрешаем Qt понимать этот enum из QML/сигналов
 
-    // Q_PROPERTY — это "свойство с уведомлением". Обычные C++-геттеры
-    // Qt из QML не видит, а свойства через Q_PROPERTY — видит:
-    // в интерфейсе можно написать, например,  text: radio.channelName
-    // И когда мы вызовем notify-сигнал (modeChanged), QML сам перерисует экран.
-    // Это и есть паттерн MODEL/VIEW из роадмапа: C++ — модель, QML — вид.
-    Q_PROPERTY(Mode mode READ mode NOTIFY modeChanged)
-    Q_PROPERTY(QString channelName READ channel NOTIFY modeChanged)
-    Q_PROPERTY(QString myName READ myName NOTIFY modeChanged)
-    Q_PROPERTY(QString speakerName READ speakerName NOTIFY speakerChanged)
-    Q_PROPERTY(QStringList members READ members NOTIFY membersChanged)
-
     explicit RadioState(SignalingClient *client, QObject *parent = nullptr);
 
     Mode mode() const { return m_mode; }
     QString channel() const { return m_channel; }
-    QString myName() const { return m_myName; }
     QString speakerName() const { return m_speakerName; }
-    QStringList members() const { return m_members; }
 
 public slots:
     // --- Действия пользователя (их будет вызывать интерфейс) ---
@@ -73,7 +60,6 @@ signals:
     // кто подписался. Интерфейс подключится сюда и перерисует экран.
     void modeChanged(Mode mode);
     void speakerChanged(const QString &name);
-    void membersChanged(const QStringList &members); // список участников канала
     void logEntry(const QString &text);
 
 private:
@@ -84,7 +70,6 @@ private:
     QString m_channel;
     QString m_myName;
     QString m_speakerName;   // кто сейчас говорит (пусто — если никто)
-    QStringList m_members;   // кто в канале (приходит от сервера: USERS ...)
     bool m_talkingGranted = false; // сервер подтвердил, что эфир наш?
 };
 

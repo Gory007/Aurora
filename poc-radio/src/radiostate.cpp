@@ -40,10 +40,8 @@ void RadioState::leaveChannel()
     m_client->sendMessage(QStringLiteral("LEAVE"));
     m_channel.clear();
     m_speakerName.clear();
-    m_members.clear();
     m_talkingGranted = false;
     emit speakerChanged(m_speakerName);
-    emit membersChanged(m_members);
     setMode(Offline);
     emit logEntry(QStringLiteral("Вышел из канала"));
 }
@@ -102,13 +100,6 @@ void RadioState::onServerMessage(const QString &type, const QString &data)
         if (m_mode == Talking)
             setMode(Listening);
     } else if (type == QLatin1String("USERS")) {
-        // Сервер прислал список участников через запятую: "Ivan, Petr"
-        // Разбиваем строку на список (QStringList) — QML покажет его как модель списка.
-        QStringList list = data.split(QLatin1Char(','), Qt::SkipEmptyParts);
-        for (QString &s : list)
-            s = s.trimmed();
-        m_members = list;
-        emit membersChanged(m_members);
         emit logEntry(QStringLiteral("В канале: %1").arg(data));
     }
 }

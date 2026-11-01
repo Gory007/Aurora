@@ -8,9 +8,9 @@
 # ---------------------------------------------------------------
 
 QT += core network
-QT += quick qml
 
-# Qt Quick/QML подключён на Этапе 3 (экран с кнопкой PTT, папка qml/).
+# Qt Quick/QML подключим на следующем этапе, когда займёмся интерфейсом.
+# QT += quick
 
 CONFIG += c++17
 
@@ -26,11 +26,6 @@ HEADERS += \
     src/radiostate.h \
     src/signalingclient.h
 
-# QML-интерфейс (Этап 3). Пока запускаем файлом с диска (видно в main.cpp);
-# при переносе в Aurora SDK их можно будет упаковать в ресурс .qrc.
-DISTFILES += \
-    qml/main.qml
-
 # Тестовый mock-сервер для отладки сети без настоящего сервера
 TESTS_DIR = tests
 
@@ -38,5 +33,5 @@ OTHER_FILES += \
     tests/mock_server.py \
     README.md
 
-# poc-radio.desktop и иконки подключим на этапе сборки .apm (Этап 8),
+# qml/app.qml и poc-radio.desktop подключим на этапе QML-интерфейса,
 # когда проект будет переноситься в Aurora SDK.
