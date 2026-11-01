@@ -1,0 +1,10 @@
+# объекты и бинарники сборки Qt
+*.o
+*.moc
+moc_*.cpp
+moc_*.h
+qrc_*.cpp
+Makefile
+.qmake.stash
+.poc-radio/
+poc-radio/poc-radio
