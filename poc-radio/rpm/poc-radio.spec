@@ -1,21 +1,26 @@
 # ---------------------------------------------------------------
 # poc-radio.spec - hand-written RPM spec for the Aurora build-engine.
 #
-# WHY THIS FILE EXISTS
-#   If rpm/ contains a spec file, sfdk uses it as-is and does NOT
-#   generate one from the yaml recipe. The auto-generated spec put a
-#   plain configure call into the build stage, which a qmake project
-#   does not have -> "Bad exit status ... (build stage)".
-#   Here the build stage is explicitly qmake + make.
+# STATUS: FALLBACK ONLY. The normal workflow uses rpm/poc-radio.yaml and
+# lets spectacle generate the spec from it (answer "Y" when sfdk asks
+# whether to overwrite a non-spectacle spec). Keep this file around as a
+# reference of what the generated spec must contain for a qmake project;
+# if you decide to build from this spec instead, delete/rename the yaml
+# or keep both in sync.
+#
+# WHY THE BUILD STAGE IS WRITTEN OUT BY HAND
+#   The default generated spec calls ./configure, which a qmake project
+#   does not have -> "Bad exit status" in the build stage. Here the build
+#   stage is explicitly qmake + make.
 #
 # TWO TRAPS THAT BROKE EARLIER BUILD ATTEMPTS
 #   1) Encoding: this file must stay pure ASCII (no Cyrillic). Saved as
 #      UTF-8 with Russian comments, rpmbuild read it with the wrong
 #      codepage and failed with
 #      "Name field must be present in package ... can't parse".
-#   2) Directives inside comments: rpmbuild expands them anyway and
-#      warns "Macro expanded in comment". So no percent-sign tokens are
-#      written in the comments above.
+#   2) RPM directives inside comments: rpmbuild expands them anyway and
+#      warns "Macro expanded in comment". So no percent tokens are used
+#      in the prose above.
 # ---------------------------------------------------------------
 
 %define debug_package %{nil}
@@ -25,11 +30,11 @@ Version:        0.1
 Release:        1
 Summary:        Proof-of-concept push-to-talk radio client for Aurora OS
 License:        MIT
-Group:          Applications/Comms And Sync
+Group:          Applications/Publishing And Printing
 URL:            https://example.org/poc-radio
 Source0:        %{name}-%{version}.tar.bz2
 
-BuildRequires:  qt5-qtbase-devel
+BuildRequires:  pkgconfig(Qt5Core) pkgconfig(Qt5Network)
 Requires:       qt5-qtbase
 
 %description
@@ -41,7 +46,7 @@ Training project, stages 1-2.
 %setup -q -n %{name}
 
 %build
-qmake-qt5 %{name}.pro
+%qmake_qt5 %{name}.pro
 make %{?_smp_mflags}
 
 %install
