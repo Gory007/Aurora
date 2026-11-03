@@ -1,21 +1,24 @@
 # ---------------------------------------------------------------
-# poc-radio.spec — ручной RPM-спецификатор для Aurora build-engine.
+# poc-radio.spec - hand-written RPM spec for the Aurora build-engine.
 #
-# Почему этот файл нужен:
-#   Если в rpm/ есть *.spec, sfdk использует ЕГО и не пытается
-#   сгенерировать spec из yaml. Сгенерированный же spec по умолчанию
-#   содержит секцию %build со стандартным вызовом ./configure,
-#   которого в qmake-проекте нет -> "No such file or directory".
+# WHY THIS FILE EXISTS
+#   If rpm/ contains a spec file, sfdk uses it as-is and does NOT
+#   generate one from the yaml recipe. The auto-generated spec put a
+#   plain configure call into the build stage, which a qmake project
+#   does not have -> "Bad exit status ... (build stage)".
+#   Here the build stage is explicitly qmake + make.
 #
-# Здесь %build явно описан через qmake-qt5 + make, а %files перечисляет
-# то, что реально попадает в пакет.
-#
-# ВАЖНО: символы "%" здесь легальны — это RPM-файл, а не YAML.
-# (В yaml-версии рецепта % писать нельзя.)
+# TWO TRAPS THAT BROKE EARLIER BUILD ATTEMPTS
+#   1) Encoding: this file must stay pure ASCII (no Cyrillic). Saved as
+#      UTF-8 with Russian comments, rpmbuild read it with the wrong
+#      codepage and failed with
+#      "Name field must be present in package ... can't parse".
+#   2) Directives inside comments: rpmbuild expands them anyway and
+#      warns "Macro expanded in comment". So no percent-sign tokens are
+#      written in the comments above.
 # ---------------------------------------------------------------
 
 %define debug_package %{nil}
-%undefine __brp_mangle_shebangs
 
 Name:           poc-radio
 Version:        0.1
@@ -30,8 +33,9 @@ BuildRequires:  qt5-qtbase-devel
 Requires:       qt5-qtbase
 
 %description
-Консольный клиент рации: подключение к серверу по TCP, вход в канал,
-PTT (нажал - говорю, отпустил - слушаю). Учебный проект, этапы 1-2.
+Console push-to-talk radio client prototype for Aurora OS: TCP
+signalling connection, channel join, PTT talk and listen.
+Training project, stages 1-2.
 
 %prep
 %setup -q -n %{name}

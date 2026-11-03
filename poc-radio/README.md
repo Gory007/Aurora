@@ -12,9 +12,24 @@ poc-radio/
 │   ├── main.cpp             # точка входа; пока консольная тестовая версия
 │   ├── radiostate.h/.cpp    # «мозг» рации: режимы Offline / Listening / Talking
 │   └── signalingclient.h/.cpp # «почтальон»: TCP-соединение с сервером
-└── tests/
-    └── mock_server.py       # учебный сервер на Python для проверки без настоящего сервера
+├── tests/
+│   └── mock_server.py       # учебный сервер на Python для проверки без настоящего сервера
+└── rpm/
+    ├── poc-radio.spec       # ГЛАВНЫЙ «рецепт» пакета: %build через qmake+make
+    └── poc-radio.yaml       # резерв/документация (spec приоритетнее)
 ```
+
+## Правила для файлов в rpm/ (чтобы сборка в Aurora SDK не падала)
+
+| Файл | Кодировка | Почему |
+|------|-----------|--------|
+| `poc-radio.spec` | **только ASCII** (комментарии и `%description` — по-английски) | rpmbuild читает spec в кодировке таргета; UTF-8 с кириллицей даёт `can't parse` и «Name/Version/Summary/License field must be present». Кроме того, директивы с `%` в строках комментариев вызывают `Macro expanded in comment` |
+| `poc-radio.yaml` | UTF-8 допустим, но символов `%` быть не должно | это YAML: `%` ломает разбор (`found character '%' that cannot start any token`) |
+
+Если в `rpm/` лежит `*.spec`, sfdk использует его как есть и **не** перегенерирует
+spec из yaml — поэтому вся логика сборки (`qmake-qt5` + `make`, установка в `/usr/bin`)
+живёт именно в spec. После любой правки этих файлов обязательно закрыть проект в
+Qt Creator и удалить каталог `build/…/.sfdk` (там остаётся прошлый сгенерированный spec).
 
 ## Архитектура в двух словах
 

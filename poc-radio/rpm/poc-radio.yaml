@@ -1,48 +1,35 @@
-# rpm/poc-radio.yaml — «рецепт» пакета для Aurora build-engine (sfdk).
+# poc-radio.yaml - recipe for the Aurora build-engine (sfdk / spectacle).
 #
-# Правила, из-за которых раньше падала сборка:
-#  1. Файл лежит в poc-radio/rpm/ — sfdk ищет его рядом с .pro.
-#  2. Это чистый YAML: RPM-директивы (%build, %files, %{name}) внутри YAML
-#     запрещены — символ "%" ломает разбор ("found character '%' that
-#     cannot start any token").
-#  3. Обязательные поля главного пакета: Name, Version, Summary, License.
-#     Без License build-engine выдаёт:
-#     "Missing mandatory keys for main package: Summary, License".
-#  4. Ключи должны называться так, как ожидает spectacle/sfdk:
-#     PkgBR (не BuildRequires), Requires, Files (список строк).
-#     Неизвестные ключи (Summary(ru), Source, Rules) вызывают Warning,
-#     а генерация spec по умолчанию даёт %build с ./configure, которого
-#     в qmake-проекте нет -> падение сборки.
+# STATUS: kept as documentation/fallback only. Because poc-radio.spec
+# exists next to it, sfdk uses the spec file and does NOT regenerate a
+# spec from this yaml. The build/install logic therefore lives in the
+# spec (%build / %install / %files), not here.
 #
-# ГЛАВНОЕ: рядом лежит poc-radio.spec — если в rpm/ есть *.spec,
-# sfdk использует его и НЕ перегенерирует spec из этого yaml.
-# Этот yaml остаётся как резерв/документация; секции сборки правильнее
-# держать в spec (см. %build в poc-radio.spec).
+# Rules learned from the previous failures:
+#  1) This is YAML: RPM directives with a percent sign break the parser
+#     ("found character '%' that cannot start any token").
+#  2) Mandatory main-package keys: Name, Version, Release, Summary, License.
+#  3) Key names expected by spectacle: PkgConfigBR / PkgBR (NOT
+#     BuildRequires), Requires, Files as a list of strings.
+#  4) Group must come from <target>/usr/share/spectacle/GROUPS.
 
 Name:       poc-radio
 Version:    0.1
 Release:    1
 Summary:    Proof-of-concept push-to-talk radio client for Aurora OS
 License:    MIT
-Group:      Applications/Comms And Sync   # approved group из /usr/share/spectacle/GROUPS
+Group:      Applications/Comms And Sync
 Url:        https://example.org/poc-radio
 Description: |
-  Консольный клиент рации: подключение к серверу по TCP, вход в канал,
-  PTT (нажал — говорю, отпустил — слушаю). Учебный проект, этапы 1-2.
+  Console push-to-talk radio client prototype for Aurora OS: TCP
+  signalling connection, channel join, PTT talk and listen.
+  Training project, stages 1-2.
 
-# Пакеты, которые build-engine установит ВНУТРИ контейнера только на время
-# сборки. В формате рецептов sfdk это поле называется PkgBR,
-# а не BuildRequires (иначе Warning "might be a typo").
-PkgBR:
+PkgConfigBR:
     - qt5-qtbase-devel
 
-# Библиотеки, которые должны быть уже на телефоне/эмуляторе,
-# чтобы приложение запустилось
 Requires:
     - qt5-qtbase
 
-# Что попадает в пакет: список строк вида "<путь>:<исходник>".
-# Важно: после двоеточия НЕ должно быть лишнего пробела в значении-макросе,
-# и формат — именно список, а не dict.
 Files:
     - "%{_bindir}/poc-radio"
