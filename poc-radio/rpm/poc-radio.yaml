@@ -1,32 +1,49 @@
-Name: poc-radio
-Version: 0.1
-Release: 1
-Summary: Proof-of-concept push-to-talk radio client
-Group: Application/Communication
-URL: https://example.org/poc-radio
-Source: %{name}-%{version}.tar.bz2
+# rpm/poc-radio.yaml — «рецепт» пакета для Aurora build-engine (sfdk).
+#
+# Правила, из-за которых раньше падала сборка:
+#  1. Файл лежит в poc-radio/rpm/ — sfdk ищет его рядом с .pro.
+#  2. Это чистый YAML: RPM-директивы (%build, %files, %{name}) внутри YAML
+#     запрещены — символ "%" ломает разбор ("found character '%' that
+#     cannot start any token").
+#  3. Обязательные поля главного пакета: Name, Version, Summary, License.
+#     Без License build-engine выдаёт:
+#     "Missing mandatory keys for main package: Summary, License".
+#  4. Сборку описывает поле Rules, состав пакета — поле Files.
+#
+# Что делает этот файл: build-engine запускает qmake+make внутри контейнера
+# Aurora SDK, а затем кладёт готовый бинарник в пакет (.apm) в /usr/bin.
+
+Name:       poc-radio
+Version:    0.1
+Release:    1
+Summary:    Proof-of-concept push-to-talk radio client for Aurora OS
+Summary(ru): Учебный прототип рации push-to-talk на Qt для Aurora OS
+License:    MIT
+Group:      Application/Communication
+URL:        https://example.org/poc-radio
+Source:     poc-radio.tar.bz2
 Description: |
-  Учебный прототип рации (push-to-talk) на Qt для Aurora OS.
+  Консольный клиент рации: подключение к серверу по TCP, вход в канал,
+  PTT (нажал — говорю, отпустил — слушаю). Учебный проект, этапы 1-2.
 
-# Инструменты, которые будут установлены внутри build-engine при сборке
-BuildRequires: qt5-qtbase-devel
-# Библиотеки, нужные уже установленному приложению (Qt Network)
-Requires: qt5-qtbase
+# Пакеты, которые build-engine установит ВНУТРИ контейнера только на время сборки
+BuildRequires:
+    - qt5-qtbase-devel
 
-# Как собираем проект: qmake + make (наш .pro подхватится автоматически)
-%build
-qmake-qt5 %{name}.pro
-make -j%{?_smp_mflags}
+# Библиотеки, которые должны быть уже на телефоне/эмуляторе,
+# чтобы приложение запустилось
+Requires:
+    - qt5-qtbase
 
-# Что кладём в пакет: один исполняемый файл в /usr/bin
-%install
-mkdir -p %{buildroot}/usr/bin
-install -m755 %{name} %{buildroot}/usr/bin/%{name}
+# Команды сборки: сначала qmake по нашему .pro, затем make.
+# Значения с "%" начинаем с кавычки, чтобы YAML не спотыкался.
+Rules:
+    - qmake-qt5 poc-radio.pro
+    # Простой и надёжный вариант: make без RPM-макросов.
+    # (Если очень хочется параллельную сборку, можно заменить на:
+    #  - make "%{?_smp_mflags}"  — но кавычки тогда обязательны)
+    - make
 
-%files
-%defattr(-,root,root,-)
-/usr/bin/%{name}
-
-# Отключаем проверки целостности, мешающие на учебных проектах
-%undefine _missing_build_ids_terminate_main
-%check_skip_files: yes
+# Что попадает в пакет: путь внутри телефона <- файл из результата сборки.
+Files:
+    "/usr/bin/poc-radio": "* poc-radio"
