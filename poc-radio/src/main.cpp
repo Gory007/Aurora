@@ -9,9 +9,9 @@
 #include "radiostate.h"
 
 /**
- * Пока интерфейс (QML) не подключён, main.cpp работает как
- * консольная версия рации: команды с клавиатуры управляют
+ * Консольная версия рации (Этапы 1–2 роадмапа): команды управляют
  * RadioState, а ответы сервера печатаются в лог.
+ * Интерфейс (QML) — это следующий Этап 3, он будет подключаться сюда.
  *
  * Запуск для проверки без сервера:  ./poc-radio --echo-server 5000
  * Запуск клиента:                   ./poc-radio --server 127.0.0.1 --port 5000
@@ -19,6 +19,8 @@
 
 int main(int argc, char *argv[])
 {
+    // QCoreApplication — приложение "без окна": идеально для проверки
+    // сетевой логики прямо в терминале.
     QCoreApplication app(argc, argv);
     QCoreApplication::setApplicationName("poc-radio");
     QCoreApplication::setApplicationVersion("0.1.0");

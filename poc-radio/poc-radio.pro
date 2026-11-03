@@ -26,9 +26,12 @@ HEADERS += \
     src/radiostate.h \
     src/signalingclient.h
 
-# Тестовый "эхо-сервер" для отладки сети без настоящего сервера
-TESTS_DIR = tests/echo-server
+# Тестовый mock-сервер для отладки сети без настоящего сервера
+TESTS_DIR = tests
 
 OTHER_FILES += \
-    qml/Page1.qml \
+    tests/mock_server.py \
     README.md
+
+# qml/app.qml и poc-radio.desktop подключим на этапе QML-интерфейса,
+# когда проект будет переноситься в Aurora SDK.
