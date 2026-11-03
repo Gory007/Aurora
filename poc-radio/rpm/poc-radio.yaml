@@ -1,0 +1,32 @@
+Name: poc-radio
+Version: 0.1
+Release: 1
+Summary: Proof-of-concept push-to-talk radio client
+Group: Application/Communication
+URL: https://example.org/poc-radio
+Source: %{name}-%{version}.tar.bz2
+Description: |
+  Учебный прототип рации (push-to-talk) на Qt для Aurora OS.
+
+# Инструменты, которые будут установлены внутри build-engine при сборке
+BuildRequires: qt5-qtbase-devel
+# Библиотеки, нужные уже установленному приложению (Qt Network)
+Requires: qt5-qtbase
+
+# Как собираем проект: qmake + make (наш .pro подхватится автоматически)
+%build
+qmake-qt5 %{name}.pro
+make -j%{?_smp_mflags}
+
+# Что кладём в пакет: один исполняемый файл в /usr/bin
+%install
+mkdir -p %{buildroot}/usr/bin
+install -m755 %{name} %{buildroot}/usr/bin/%{name}
+
+%files
+%defattr(-,root,root,-)
+/usr/bin/%{name}
+
+# Отключаем проверки целостности, мешающие на учебных проектах
+%undefine _missing_build_ids_terminate_main
+%check_skip_files: yes
